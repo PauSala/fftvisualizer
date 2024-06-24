@@ -15,7 +15,7 @@ impl HannWindow {
     pub fn apply(&self, samples: &mut [f32]) {
         if samples.len() != self.window.len() {
             panic!(
-                "samples len {} is different than window len {}",
+                "samples len ({}) is different than window len ({})",
                 samples.len(),
                 self.window.len()
             )

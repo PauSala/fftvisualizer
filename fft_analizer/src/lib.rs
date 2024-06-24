@@ -12,8 +12,9 @@ pub struct FrequencySpectrum {
 
 impl FrequencySpectrum {
     pub fn new(samples_len: usize, channels: u16) -> Self {
-        let hann_window = HannWindow::new(samples_len);
-        let samples_mut = vec![0.0; samples_len / channels as usize];
+        let len = samples_len / channels as usize;
+        let hann_window = HannWindow::new(len);
+        let samples_mut = vec![0.0; len];
         FrequencySpectrum {
             hann_window,
             samples_mut,
@@ -59,7 +60,6 @@ impl FrequencySpectrum {
 
         if self.channels == 1 {
             // Mono audio: directly use the samples
-            self.samples_mut.extend_from_slice(samples);
             for (i, e) in samples.iter().enumerate() {
                 self.samples_mut[i] = *e;
             }
@@ -106,7 +106,7 @@ impl FrequencySpectrum {
 
         let min = *input
             .iter()
-            .min_by(|a, b| a.partial_cmp(b).unwrap())
+            .min_by(|a, b| a.partial_cmp(b).expect(&format!("{} {}", a, b)))
             .expect("This vector shouln'd be empty");
         let max = *input
             .iter()
@@ -141,7 +141,7 @@ mod tests {
     fn sinus_wave() -> Vec<f32> {
         let mut res: Vec<f32> = vec![0.0; 360];
         for e in 0..res.len() {
-            let sin = (e as f32 * PI / 180.0).sin() * 1000.0;
+            let sin = (e as f32 * PI / 180.0).sin() + 1.0;
             res[e] = sin;
         }
         res
@@ -165,7 +165,6 @@ mod tests {
         let samples = vec![1.0, 2.0, 3.0, 3.0, 4.0, 5.0];
         let mut fs = FrequencySpectrum::new(samples.len(), 3);
         fs.mix_channels(&samples);
-        dbg!(&fs.samples_mut.len());
         assert_eq!(vec![2.0, 4.0], fs.samples_mut);
     }
 
@@ -183,7 +182,7 @@ mod tests {
     }
 
     #[test]
-    fn normalize_all_values_are_equal_and_are_zero() {
+    fn normalize_all_values_are_equal_to_zero() {
         let mut input = vec![0.0, 0.0, 0.0, 0.0];
         FrequencySpectrum::normalize(&mut input);
         assert_eq!(input, vec![0.0, 0.0, 0.0, 0.0]);

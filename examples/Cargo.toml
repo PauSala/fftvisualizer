@@ -13,3 +13,6 @@ fft_analizer = { version = "0.1.0", path = "../fft_analizer" }
 [[example]]
 name = "test"
 path = "test.rs"
+
+[dependencies]
+rand = "0.8.5"
