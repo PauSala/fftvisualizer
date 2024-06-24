@@ -1,5 +1,3 @@
-use fft_analizer::add;
-
 pub fn main() {
-    println!("This is working! {}", add(33, 22))
+    println!("This is working! ")
 }
