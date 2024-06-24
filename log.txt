@@ -1,11 +1,8 @@
 
-running 4 tests
-test tests::normalize_all_values_should_be_in_zero_one_range ... ok
-test tests::normalize_all_values_are_equal_and_are_zero ... ok
-test tests::normalize_all_values_are_equal_and_greater_than_zero ... ok
-test tests::frequencies_should_fill_first_bin_to_one_for_sinus_wave ... ok
+running 1 test
+test tests::mix_channels ... ok
 
-test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
 
 running 0 tests
