@@ -3,7 +3,7 @@ pub mod hann_window;
 use hann_window::HannWindow;
 use rustfft::{num_complex::Complex, FftPlanner};
 
-/// A struct for computing frequency spectrum using FFT.
+/// A struct for computing the frequency spectrum of audio samples using FFT.
 pub struct FrequencySpectrum {
     hann_window: HannWindow,
     samples_mut: Vec<f32>,
