@@ -1,0 +1,15 @@
+[package]
+edition = "2021"
+name = "examples"
+version = "0.1.0"
+authors = ["pausala"]
+readme = "README.md"
+license = "MIT"
+
+[dev-dependencies]
+fft_analizer = { version = "0.1.0", path = "../fft_analizer" }
+
+
+[[example]]
+name = "test"
+path = "test.rs"
