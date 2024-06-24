@@ -106,11 +106,17 @@ impl FrequencySpectrum {
 
         let min = *input
             .iter()
-            .min_by(|a, b| a.partial_cmp(b).expect(&format!("{} {}", a, b)))
+            .min_by(|a, b| {
+                a.partial_cmp(b)
+                    .expect(&format!("Can't compare this values: {} {}", a, b))
+            })
             .expect("This vector shouln'd be empty");
         let max = *input
             .iter()
-            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .max_by(|a, b| {
+                a.partial_cmp(b)
+                    .expect(&format!("Can't compare this values: {} {}", a, b))
+            })
             .expect("This vector shouln'd be empty");
 
         // Avoid division by zero
