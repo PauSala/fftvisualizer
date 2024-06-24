@@ -1,6 +1,28 @@
 use rustfft::{num_complex::Complex, FftPlanner};
 
-pub fn frequencies(samples: &[f32], channels: u16) -> Vec<f32> {
+/// Computes the frequency spectrum of audio samples using FFT.
+///
+/// Takes a slice of audio samples and computes the FFT (Fast Fourier Transform)
+/// to obtain the frequency domain representation.
+///
+/// If `channels` is 1, assumes mono audio and directly uses `samples`.
+/// If `channels` is greater than 1, assumes interleaved stereo or multi-channel audio
+/// and averages samples across channels before computing FFT.
+///
+/// Applies a Hann window to the samples before FFT to reduce spectral leakage.
+/// Normalizes the FFT output to ensure consistent magnitude scaling.
+///
+/// # Arguments
+///
+/// * `samples` - A slice containing the audio samples.
+/// * `channels` - Number of audio channels (1 for mono, 2 for stereo, etc.).
+///
+/// # Returns
+///
+/// A vector containing the magnitudes of the frequency bins from the FFT,
+/// ignoring the DC component
+///
+pub fn frequency_spectrum(samples: &[f32], channels: u16) -> Vec<f32> {
     let mut mixed_samples = Vec::with_capacity(samples.len() / channels as usize);
     let mut v: f32 = 0.0;
     if channels == 1 {
@@ -105,7 +127,7 @@ mod tests {
     #[test]
     fn frequencies_should_fill_first_bin_to_one_for_sinus_waves() {
         let mut samples = sinus_wave();
-        let res = frequencies(&mut samples, 1);
+        let res = frequency_spectrum(&mut samples, 1);
         assert_eq!(res[0], 1.0);
     }
 
