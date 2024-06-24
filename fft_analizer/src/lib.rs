@@ -148,7 +148,7 @@ mod tests {
     }
 
     #[test]
-    fn frequencies_should_fill_first_bin_to_one_for_sinus_waves() {
+    fn should_fill_first_bin_to_one_for_sinus_waves() {
         let mut samples = sinus_wave();
         let mut fs = FrequencySpectrum::new(samples.len(), 1);
         let res = fs.frequency_spectrum(&mut samples);
