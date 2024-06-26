@@ -58,7 +58,6 @@ fn update(_app: &App, model: &mut Model, update: Update) {
 
 fn view(app: &App, model: &Model, frame: Frame) {
     // Using this we will encode commands that will be submitted to the GPU.
-    // println!("{:?}", model.fft_analizer.smothed);
     let uniforms = Uniforms {
         u_value: mutate_uniforms(&model.fft_analizer.smoothed),
         time: app.time,
@@ -121,7 +120,7 @@ fn model(app: &App) -> Model {
         .build()
         .unwrap();
 
-    // FftAnalizer:  recieves from input stream
+    // FftConsumer:  recieves from input stream
     let channels = in_stream.cpal_config().channels;
     let output_model = FftConsumer::new(cons, channels);
 
