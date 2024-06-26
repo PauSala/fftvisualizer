@@ -1,0 +1,8 @@
+[package]
+name = "audio_streams"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ringbuf = "0.4.1"
+fft_analizer = { version = "0.1.0", path = "../fft_analizer" }

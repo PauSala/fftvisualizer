@@ -1,6 +1,6 @@
 [workspace]
 
-members = ["fft_analizer", "examples"]
+members = ["fft_analizer", "examples", "audio_streams"]
 
 # Required for wgpu v0.10 feature resolution.
 resolver = "2"
