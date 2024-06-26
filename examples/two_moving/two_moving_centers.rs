@@ -18,13 +18,13 @@ pub fn generate_random_noise(length: usize) -> Vec<f32> {
 }
 
 /// Input buffer
-const IB_LEN: usize = 4096;
+const IB_LEN: usize = 1024;
 /// Frequencies buffer
 const FB_LEN: usize = IB_LEN / 2;
 /// Display buffer
-const DB_LEN: usize = FB_LEN / 4;
+const DB_LEN: usize = FB_LEN / 1;
 /// Dellta factor for smoothing
-pub const DELTA: usize = 16;
+pub const DELTA: usize = 2;
 ///
 const WIDTH: usize = 512;
 const HEIGHT: usize = 512;
@@ -57,9 +57,9 @@ fn update(_app: &App, model: &mut Model, update: Update) {
 }
 
 fn view(app: &App, model: &Model, frame: Frame) {
-    // Using this we will encode commands that will be submitted to the GPU.
+    let uvalue = mutate_uniforms(&model.fft_analizer.smoothed);
     let uniforms = Uniforms {
-        u_value: mutate_uniforms(&model.fft_analizer.smoothed),
+        u_value: uvalue,
         time: app.time,
         freq: 0.0,
         width: WIDTH as f32,
@@ -74,6 +74,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
         contents: uniforms_bytes,
         usage,
     });
+    // Using this we will encode commands that will be submitted to the GPU.
 
     let mut encoder = frame.command_encoder();
     encoder.copy_buffer_to_buffer(
@@ -210,16 +211,6 @@ fn mutate_uniforms(u: &[f32; FB_LEN]) -> [f32; DB_LEN] {
     uniforms
 }
 
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct Uniforms {
-    u_value: [f32; DB_LEN],
-    time: f32,
-    freq: f32,
-    height: f32,
-    width: f32,
-}
-
 fn create_mixed_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
     wgpu::BindGroupLayoutBuilder::new()
         .uniform_buffer(wgpu::ShaderStages::VERTEX_FRAGMENT, false)
@@ -246,6 +237,16 @@ fn create_pipeline_layout(
         push_constant_ranges: &[],
     };
     device.create_pipeline_layout(&desc)
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct Uniforms {
+    u_value: [f32; DB_LEN],
+    time: f32,
+    freq: f32,
+    height: f32,
+    width: f32,
 }
 
 // The vertex type that we will use to represent a point on our triangle.

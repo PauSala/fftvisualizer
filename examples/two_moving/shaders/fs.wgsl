@@ -46,5 +46,5 @@ fn main(@builtin(position) in: vec4<f32>) -> @location(0) vec4<f32> {
     let fy = u.freqs[slot_y][offset_y];
 
     let color = vec3(abs(sin(f - fy)), (fy + f) / 2.0, abs(fract((sin(fy + f)))));
-    return vec4(color, 0.2);
+    return vec4(color, 1.0);
 }

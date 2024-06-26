@@ -21,7 +21,7 @@ pub struct FftConsumer<
     /// Consumer to read from shared buffer
     consumer: T,
     /// Input samples
-    samples: [f32; IB_LEN],
+    pub samples: [f32; IB_LEN],
     /// Processed frequencies
     pub frequencies: [f32; FB_LEN],
     /// Smoothed frequencies
