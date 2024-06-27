@@ -32,19 +32,25 @@ fn main(@builtin(position) in: vec4<f32>) -> @location(0) vec4<f32> {
     c = c * radius ;
 
     let center = vec2<f32>(c, s);
-    let distance = distance(center, uv ) * uv.y;
-    let idx = (distance * 511.0) * sin(atan2(uv.x, fract(uv.y)));
+    let d1 = distance(center, uv );
+    let distance = distance(center, uv ) * fract(sin(uv.y) * cos(uv.x));
+    let idx = (distance * 255.0) ;
     let slot = u32(idx) / 4u ;
     let offset = u32(2.0 * idx ) % 4u ;
     let f = u.freqs[slot][offset];
 
     let c2 = vec2<f32>(s, c);
-    let distance_y = distance(c2, uv)*uv.y;
-    let idx_y = (distance_y * 511.0)  * sin(atan2(fract(uv.x), uv.y));
+    let d2 = distance(c2, uv );
+    let distance_y = distance(c2, uv ) * fract(sin(uv.x) * cos(uv.y));
+    let idx_y = (distance_y * 255.0) ;
     let slot_y = u32(idx_y) / 4u ;
     let offset_y = u32(2.0 *  idx_y ) % 4u ;
     let fy = u.freqs[slot_y][offset_y];
 
-    let color = vec3(abs(sin(f - fy)), (fy + f) / 2.0, abs(fract((sin(fy + f)))));
-    return vec4(color, 1.0);
+    let color = vec3(abs(sin(f + d2  - fy * d1)), (fy + f * d1) / 2.0, abs(fract((sin(fy + f + d1 + d2)))));
+    //let color = vec3(abs(sin(f * (distance_y) )), abs(sin(fy  ( distance) )), abs((sin(distance_y - distance))));
+
+
+
+    return vec4(color, 0.8);
 }

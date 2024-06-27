@@ -24,7 +24,7 @@ const FB_LEN: usize = IB_LEN / 2;
 /// Display buffer
 const DB_LEN: usize = FB_LEN / 1;
 /// Dellta factor for smoothing
-pub const DELTA: usize = 2;
+pub const DELTA: usize = 4;
 ///
 const WIDTH: usize = 512;
 const HEIGHT: usize = 512;
@@ -62,8 +62,8 @@ fn view(app: &App, model: &Model, frame: Frame) {
         u_value: uvalue,
         time: app.time,
         freq: 0.0,
-        width: WIDTH as f32,
-        height: HEIGHT as f32,
+        width: app.main_window().rect().w(),
+        height: app.main_window().rect().h(),
     };
     let uniforms_size = std::mem::size_of::<Uniforms>() as wgpu::BufferAddress;
     let uniforms_bytes = uniforms_as_bytes(&uniforms);
