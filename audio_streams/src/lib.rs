@@ -1,6 +1,7 @@
 use fft_analizer::FrequencySpectrum;
 use ringbuf::{storage::Heap, traits::*, wrap::caching::Caching, SharedRb};
 use std::{sync::Arc, time::Duration};
+pub mod bandpass;
 
 pub struct InputModel<T: Producer<Item = f32>> {
     pub producer: T,

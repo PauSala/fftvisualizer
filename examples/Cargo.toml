@@ -15,6 +15,10 @@ audio_streams = { version = "0.1.0", path = "../audio_streams" }
 name = "timeline"
 path = "timeline/timeline.rs"
 
+[[example]]
+name = "bandpass"
+path = "bandpass/bandpass.rs"
+
 [dependencies]
 nannou = "0.19.0"
 nannou_audio = "0.19.0"

@@ -138,7 +138,7 @@ impl FrequencySpectrum {
         }
     }
 
-    fn logarithmic_bins(spectrum: &[f32], num_bins: usize) -> Vec<f32> {
+    fn _logarithmic_bins(spectrum: &[f32], num_bins: usize) -> Vec<f32> {
         let n = spectrum.len();
         let mut bins = Vec::with_capacity(num_bins);
 
