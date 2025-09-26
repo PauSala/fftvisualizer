@@ -3,19 +3,7 @@ use std::time::Duration;
 use audio_streams::{AudioConsumerF32, AudioProducerF32, FftConsumer, InputModel};
 use nannou::prelude::*;
 use nannou_audio::{self as audio, Buffer};
-use rand::Rng;
 use ringbuf::{traits::*, HeapRb}; // Add rand crate to your dependencies
-
-pub fn generate_random_noise(length: usize) -> Vec<f32> {
-    let mut rng = rand::thread_rng();
-    let mut samples = Vec::with_capacity(length);
-
-    for _ in 0..length {
-        samples.push(rng.gen_range(-1.0..1.0));
-    }
-
-    samples
-}
 
 /// Input buffer
 const IB_LEN: usize = 1024;
@@ -23,8 +11,10 @@ const IB_LEN: usize = 1024;
 const FB_LEN: usize = IB_LEN / 2;
 /// Display buffer
 const DB_LEN: usize = FB_LEN / 1;
+/// Number of FFT frames to store in history
+const HISTORY_LEN: usize = 128;
 /// Dellta factor for smoothing
-pub const DELTA: usize = 4;
+pub const DELTA: usize = 8;
 ///
 const WIDTH: usize = 512;
 const HEIGHT: usize = 512;
@@ -37,11 +27,14 @@ pub struct Model {
     pub audio_in: audio::Stream<AudioProducerF32>,
     pub fft_analizer: AudioConsumerF32<IB_LEN, FB_LEN, DELTA>,
     pub elapsed: Duration,
+    fft_history: [[f32; DB_LEN]; HISTORY_LEN],
+    history_index: usize,
 
     render_pipeline: wgpu::RenderPipeline,
     bind_group: wgpu::BindGroup,
     vertex_buffer: wgpu::Buffer,
-    uniform_buffer: wgpu::Buffer,
+    storage_buffer: wgpu::Buffer,
+    pub time: Duration,
 }
 
 impl Model {
@@ -54,36 +47,40 @@ fn update(_app: &App, model: &mut Model, update: Update) {
     let milis = update.since_last;
     // This is due to precission issues if the elapsed time is too short
     model.update(milis);
+
+    model.time += milis;
+    // Store the latest FFT data in our history buffer
+    if model.time.as_millis() > 0 {
+        let new_fft_data = mutate_uniforms(&model.fft_analizer.smoothed);
+        model.fft_history[model.history_index] = new_fft_data;
+        model.history_index = (model.history_index + 1) % HISTORY_LEN;
+        model.time = Duration::from_millis(0);
+    }
 }
 
 fn view(app: &App, model: &Model, frame: Frame) {
-    let uvalue = mutate_uniforms(&model.fft_analizer.smoothed);
     let uniforms = Uniforms {
-        u_value: uvalue,
+        u_value: model.fft_history,
         time: app.time,
-        freq: 0.0,
+        history_len: HISTORY_LEN as f32,
         width: app.main_window().rect().w(),
         height: app.main_window().rect().h(),
+        history_index: model.history_index as f32,
+        _padding: [0.0; 3],
     };
     let uniforms_size = std::mem::size_of::<Uniforms>() as wgpu::BufferAddress;
     let uniforms_bytes = uniforms_as_bytes(&uniforms);
     let usage = wgpu::BufferUsages::COPY_SRC;
     let device = frame.device_queue_pair().device();
-    let new_uniform_buffer = device.create_buffer_init(&BufferInitDescriptor {
-        label: None,
+    let temp_buffer = device.create_buffer_init(&BufferInitDescriptor {
+        label: Some("temp-storage-buffer"),
         contents: uniforms_bytes,
         usage,
     });
     // Using this we will encode commands that will be submitted to the GPU.
 
     let mut encoder = frame.command_encoder();
-    encoder.copy_buffer_to_buffer(
-        &new_uniform_buffer,
-        0,
-        &model.uniform_buffer,
-        0,
-        uniforms_size,
-    );
+    encoder.copy_buffer_to_buffer(&temp_buffer, 0, &model.storage_buffer, 0, uniforms_size);
 
     // The render pass can be thought of a single large command consisting of sub commands. Here we
     // begin a render pass that outputs to the frame's texture. Then we add sub-commands for
@@ -159,23 +156,25 @@ fn model(app: &App) -> Model {
     //uniforms
     // Create the buffer that will store time.
     let uniforms = Uniforms {
-        u_value: create_uniforms(),
+        u_value: [[0.0; DB_LEN]; HISTORY_LEN],
         time: 0.0,
-        freq: 0.0,
+        history_len: HISTORY_LEN as f32,
         width: WIDTH as f32,
         height: HEIGHT as f32,
+        history_index: 0.0,
+        _padding: [0.0; 3],
     };
     let uniforms_bytes = uniforms_as_bytes(&uniforms);
-    let usage = wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST;
-    let uniform_buffer = device.create_buffer_init(&BufferInitDescriptor {
-        label: Some("uniform-buffer"),
+    let usage = wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST;
+    let storage_buffer = device.create_buffer_init(&BufferInitDescriptor {
+        label: Some("storage-buffer"),
         contents: uniforms_bytes,
         usage,
     });
     // Create the bind group layout specifying the binding for uniforms.
-    let bind_group_layout = create_mixed_bind_group_layout(device);
+    let bind_group_layout = create_bind_group_layout(device);
     // Create the bind group using the layout and uniform buffer.
-    let bind_group = create_bind_group(device, &bind_group_layout, &uniform_buffer);
+    let bind_group = create_bind_group(device, &bind_group_layout, &storage_buffer);
 
     // Create the pipeline layout using the bind group layout.
     let pipeline_layout = create_pipeline_layout(&device, &bind_group_layout);
@@ -192,15 +191,14 @@ fn model(app: &App) -> Model {
         audio_in: in_stream,
         fft_analizer: output_model,
         elapsed: Duration::from_secs(0),
+        fft_history: [[0.0; DB_LEN]; HISTORY_LEN],
+        history_index: 0,
         render_pipeline,
         bind_group,
         vertex_buffer,
-        uniform_buffer,
+        storage_buffer,
+        time: Duration::from_secs(0),
     }
-}
-
-fn create_uniforms() -> [f32; DB_LEN] {
-    [0.0; DB_LEN]
 }
 
 fn mutate_uniforms(u: &[f32; FB_LEN]) -> [f32; DB_LEN] {
@@ -211,9 +209,9 @@ fn mutate_uniforms(u: &[f32; FB_LEN]) -> [f32; DB_LEN] {
     uniforms
 }
 
-fn create_mixed_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
+fn create_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
     wgpu::BindGroupLayoutBuilder::new()
-        .uniform_buffer(wgpu::ShaderStages::VERTEX_FRAGMENT, false)
+        .storage_buffer(wgpu::ShaderStages::FRAGMENT, false, true)
         .build(device)
 }
 
@@ -242,11 +240,13 @@ fn create_pipeline_layout(
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Uniforms {
-    u_value: [f32; DB_LEN],
+    u_value: [[f32; DB_LEN]; HISTORY_LEN],
     time: f32,
-    freq: f32,
+    history_len: f32,
     height: f32,
     width: f32,
+    history_index: f32,
+    _padding: [f32; 3], // Padding to align to 16 bytes
 }
 
 // The vertex type that we will use to represent a point on our triangle.

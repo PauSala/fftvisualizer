@@ -46,9 +46,10 @@ impl FrequencySpectrum {
     pub fn frequency_spectrum(&mut self, samples: &[f32]) -> Vec<f32> {
         self.mix_channels(samples);
         self.hann_window.apply(&mut self.samples_mut);
-        let mut ff = self.fft();
-        FrequencySpectrum::normalize(&mut ff);
-        ff
+        let mut spectrum = self.fft();
+        // spectrum = FrequencySpectrum::logarithmic_bins(&spectrum, spectrum.len());
+        FrequencySpectrum::normalize(&mut spectrum);
+        spectrum
     }
 
     /// Mixes audio samples across channels by averaging them.
@@ -135,6 +136,23 @@ impl FrequencySpectrum {
                 *value = (*value - min) / (max - min);
             }
         }
+    }
+
+    fn logarithmic_bins(spectrum: &[f32], num_bins: usize) -> Vec<f32> {
+        let n = spectrum.len();
+        let mut bins = Vec::with_capacity(num_bins);
+
+        for i in 0..num_bins {
+            // map i ∈ [0,num_bins-1] to log-space index
+            let norm_i = i as f32 / (num_bins - 1) as f32; // 0..1
+                                                           // exponent > 1 to concentrate bins at low frequencies
+            let exp_factor = 2.5; // tweak: higher -> more low-freq resolution
+            let log_idx = ((norm_i).powf(exp_factor)) * (n - 1) as f32;
+            let idx = log_idx.min((n - 1) as f32) as usize;
+            bins.push(spectrum[idx]);
+        }
+
+        bins
     }
 }
 

@@ -59,11 +59,11 @@ impl<const IB_LEN: usize, const FB_LEN: usize, const DELTA: usize, T: Consumer<I
             return;
         }
         let ff = self.fs.frequency_spectrum(&mut self.samples);
-        for (i, f) in ff.iter().enumerate() {
-            self.frequencies[i] = *f;
+        for i in 0..self.frequencies.len() {
+            self.frequencies[i] = ff[i];
         }
         let m = (milis.as_nanos() / 1_000_000) as f64;
-        for i in 0..ff.len() {
+        for i in 0..self.frequencies.len() {
             self.smoothed[i] +=
                 (ff[i] - self.smoothed[i]) as f32 * (m / 1000.0) as f32 * DELTA as f32;
         }
