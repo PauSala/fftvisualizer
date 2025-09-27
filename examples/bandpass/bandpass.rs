@@ -9,15 +9,15 @@ use nannou_audio::{self as audio, Buffer};
 use ringbuf::{traits::*, HeapRb}; // Add rand crate to your dependencies
 
 /// Input buffer
-const IB_LEN: usize = 2048;
+const IB_LEN: usize = 2024;
 /// Frequencies buffer
-const FB_LEN: usize = 88;
+const FB_LEN: usize = 44;
 /// Display buffer
 const DB_LEN: usize = FB_LEN / 1;
 /// Number of FFT frames to store in history
 const HISTORY_LEN: usize = 128;
 /// Dellta factor for smoothing
-pub const DELTA: usize = 4;
+pub const DELTA: usize = 64;
 ///
 const WIDTH: usize = 512;
 const HEIGHT: usize = 512;
@@ -30,7 +30,7 @@ pub struct Model {
     pub audio_in: audio::Stream<AudioProducerF32>,
     pub filter_bank: AudioConsumerFilterBankF32<IB_LEN, FB_LEN, DELTA>,
     pub elapsed: Duration,
-    fft_history: [[f32; DB_LEN]; HISTORY_LEN],
+    fft_history: [[f32; FB_LEN]; HISTORY_LEN],
     history_index: usize,
 
     render_pipeline: wgpu::RenderPipeline,
@@ -48,17 +48,11 @@ impl Model {
 
 fn update(_app: &App, model: &mut Model, update: Update) {
     let milis = update.since_last;
-    // This is due to precission issues if the elapsed time is too short
     model.update(milis);
 
-    model.time += milis;
-    // Store the latest FFT data in our history buffer
-    if model.time.as_millis() > 0 {
-        let new_fft_data = mutate_uniforms(&model.filter_bank.smoothed);
-        model.fft_history[model.history_index] = new_fft_data;
-        model.history_index = (model.history_index + 1) % HISTORY_LEN;
-        model.time = Duration::from_millis(0);
-    }
+    let new_fft_data = mutate_uniforms(&model.filter_bank.smoothed);
+    model.fft_history[model.history_index] = new_fft_data;
+    model.history_index = (model.history_index + 1) % HISTORY_LEN;
 }
 
 fn view(app: &App, model: &Model, frame: Frame) {
@@ -124,8 +118,8 @@ fn model(app: &App) -> Model {
     let output_model = FilterBankConsumer::new(
         cons,
         in_stream.cpal_config().sample_rate.0 as f32,
-        27.5,
-        4186.0,
+        110.0, // f_min (A2)
+        1396.9,
     );
 
     // Start input stream
@@ -162,7 +156,7 @@ fn model(app: &App) -> Model {
     //uniforms
     // Create the buffer that will store time.
     let uniforms = Uniforms {
-        u_value: [[0.0; DB_LEN]; HISTORY_LEN],
+        u_value: [[0.0; FB_LEN]; HISTORY_LEN],
         time: 0.0,
         history_len: HISTORY_LEN as f32,
         width: WIDTH as f32,
@@ -197,7 +191,7 @@ fn model(app: &App) -> Model {
         audio_in: in_stream,
         filter_bank: output_model,
         elapsed: Duration::from_secs(0),
-        fft_history: [[0.0; DB_LEN]; HISTORY_LEN],
+        fft_history: [[0.0; FB_LEN]; HISTORY_LEN],
         history_index: 0,
         render_pipeline,
         bind_group,
@@ -207,9 +201,9 @@ fn model(app: &App) -> Model {
     }
 }
 
-fn mutate_uniforms(u: &[f32; FB_LEN]) -> [f32; DB_LEN] {
-    let mut uniforms = [0.0; DB_LEN];
-    for i in 0..DB_LEN {
+fn mutate_uniforms(u: &[f32; FB_LEN]) -> [f32; FB_LEN] {
+    let mut uniforms = [0.0; FB_LEN];
+    for i in 0..FB_LEN {
         uniforms[i] = u[i];
     }
     uniforms
@@ -246,7 +240,7 @@ fn create_pipeline_layout(
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Uniforms {
-    u_value: [[f32; DB_LEN]; HISTORY_LEN],
+    u_value: [[f32; FB_LEN]; HISTORY_LEN],
     time: f32,
     history_len: f32,
     height: f32,
