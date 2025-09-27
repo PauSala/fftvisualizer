@@ -9,13 +9,13 @@ use nannou_audio::{self as audio, Buffer};
 use ringbuf::{traits::*, HeapRb}; // Add rand crate to your dependencies
 
 /// Input buffer
-const IB_LEN: usize = 2024;
+const IB_LEN: usize = 1024;
 /// Frequencies buffer
-const FB_LEN: usize = 44;
+const FB_LEN: usize = 88;
 /// Display buffer
 const DB_LEN: usize = FB_LEN / 1;
 /// Number of FFT frames to store in history
-const HISTORY_LEN: usize = 128;
+const HISTORY_LEN: usize = 256;
 /// Dellta factor for smoothing
 pub const DELTA: usize = 64;
 ///
@@ -118,8 +118,8 @@ fn model(app: &App) -> Model {
     let output_model = FilterBankConsumer::new(
         cons,
         in_stream.cpal_config().sample_rate.0 as f32,
-        110.0, // f_min (A2)
-        1396.9,
+        27.5, // f_min (A2)
+        4186.0,
     );
 
     // Start input stream
@@ -171,15 +171,9 @@ fn model(app: &App) -> Model {
         contents: uniforms_bytes,
         usage,
     });
-    // Create the bind group layout specifying the binding for uniforms.
     let bind_group_layout = create_bind_group_layout(device);
-    // Create the bind group using the layout and uniform buffer.
     let bind_group = create_bind_group(device, &bind_group_layout, &storage_buffer);
-
-    // Create the pipeline layout using the bind group layout.
     let pipeline_layout = create_pipeline_layout(&device, &bind_group_layout);
-
-    // Create the render pipeline using the vertex and fragment shaders, bind group, and pipeline layout.
     let render_pipeline = wgpu::RenderPipelineBuilder::from_layout(&pipeline_layout, &vs_mod)
         .fragment_shader(&fs_mod)
         .color_format(format)

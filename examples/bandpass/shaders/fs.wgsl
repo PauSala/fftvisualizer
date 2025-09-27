@@ -1,5 +1,5 @@
 struct Uniforms {
-    u_value: array<array<f32, 44>, 128>,
+    u_value: array<array<f32, 88>, 256>,
     time: f32,
     history_len: f32,
     height: f32,
@@ -16,22 +16,19 @@ fn main(@builtin(position) in_pos: vec4<f32>) -> @location(0) vec4<f32> {
         1.0 - (in_pos.y / u.height)
     );
 
-    let num_bins = 44.0;
+    let num_bins = 88.0;
     let freq_index = i32(floor(uv.y * num_bins));
 
-    // Map to time index for scrolling
     let history_len_i = i32(u.history_len);
     let history_index_i = i32(u.history_index);
     let time_offset = i32(uv.x * u.history_len);
     let time_index = (history_index_i + time_offset) % history_len_i;
 
-    // Fetch magnitude
     let eps = 1e-6;
-    let raw = u.u_value[time_index][freq_index] * (pow(uv.x, 1.5) + eps);
+    let raw = u.u_value[time_index][freq_index] * (pow(uv.x, 2.5) + eps);
     let magnitude = sqrt(raw*100.0);
 
-    // --- Color by note (repeating every 12 bins) ---
-    let note_index = freq_index % 12; // 0..11
+    let note_index = freq_index % 12;
     var base_color: vec3<f32>;
 
     switch(note_index) {
@@ -51,22 +48,10 @@ fn main(@builtin(position) in_pos: vec4<f32>) -> @location(0) vec4<f32> {
     }
 
 
-    // --- High-Frequency Yellow Filter (NEW LOGIC) ---
-    let yellow_color = vec3<f32>(1.0, 1.0, 0.0); // Pure Yellow
-    
-    // Create a normalized factor based on the frequency index (0 to 1)
-    // The uv.y value already gives a smooth 0.0 to 1.0 transition from bottom to top.
+    let yellow_color = vec3<f32>(0.99876, 0.98098, 0.8998698);
     let yellow_mix = uv.y; 
-    
-    // Increase the exponent (e.g., pow(uv.y, 2.0)) to delay the yellow tint 
-    // until the highest frequencies, making the effect more pronounced at the top.
-    let mix_factor = pow(yellow_mix, 2.0); 
-
-    // Linearly interpolate (mix) between the note's base_color and the yellow_color.
+    let mix_factor = pow(yellow_mix, 3.0); 
     let final_color_base = mix(base_color, yellow_color, mix_factor);
-
-
-    // Modulate color by magnitude
     let color = final_color_base * max(magnitude, 0.001);
 
     return vec4<f32>(color, 1.0);
