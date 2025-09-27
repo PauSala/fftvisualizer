@@ -12,11 +12,9 @@ use ringbuf::{traits::*, HeapRb}; // Add rand crate to your dependencies
 const IB_LEN: usize = 1024;
 /// Frequencies buffer
 const FB_LEN: usize = 88;
-/// Display buffer
-const DB_LEN: usize = FB_LEN / 1;
 /// Number of FFT frames to store in history
 const HISTORY_LEN: usize = 256;
-/// Dellta factor for smoothing
+/// Delta factor for smoothing
 pub const DELTA: usize = 64;
 ///
 const WIDTH: usize = 512;
