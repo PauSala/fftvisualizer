@@ -72,8 +72,8 @@ fn view(app: &App, model: &Model, frame: Frame) {
         contents: uniforms_bytes,
         usage,
     });
-    // Using this we will encode commands that will be submitted to the GPU.
 
+    // Using this we will encode commands that will be submitted to the GPU.
     let mut encoder = frame.command_encoder();
     encoder.copy_buffer_to_buffer(&temp_buffer, 0, &model.storage_buffer, 0, uniforms_size);
 
@@ -84,12 +84,10 @@ fn view(app: &App, model: &Model, frame: Frame) {
         .color_attachment(frame.texture_view(), |color| color)
         .begin(&mut encoder);
     render_pass.set_bind_group(0, &model.bind_group, &[]);
-    // render_pass.set_bind_group(1, &model.camera_bind_group, &[]);
     render_pass.set_pipeline(&model.render_pipeline);
     render_pass.set_vertex_buffer(0, model.vertex_buffer.slice(..));
 
     // We want to draw the whole range of vertices, and we're only drawing one instance of them.
-
     let vertex_range = 0..VERTICES.len() as u32;
     let instance_range = 0..1;
     render_pass.draw(vertex_range, instance_range);
@@ -98,10 +96,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
 }
 
 fn model(app: &App) -> Model {
-    // Initialise the audio host so we can spawn an audio stream.
     let audio_host = audio::Host::new();
-
-    // Create a ring buffer and split it into producer and consumer
     let rb = HeapRb::<f32>::new(IB_LEN);
     let (prod, cons) = rb.split();
 
@@ -116,7 +111,7 @@ fn model(app: &App) -> Model {
     let output_model = FilterBankConsumer::new(
         cons,
         in_stream.cpal_config().sample_rate.0 as f32,
-        27.5, // f_min (A2)
+        27.5,
         4186.0,
     );
 
