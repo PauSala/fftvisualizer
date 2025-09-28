@@ -15,7 +15,7 @@ const FB_LEN: usize = 88;
 /// Number of FFT frames to store in history
 const HISTORY_LEN: usize = 256;
 /// Delta factor for smoothing
-pub const DELTA: usize = 64;
+pub const DELTA: usize = 4;
 ///
 const WIDTH: usize = 512;
 const HEIGHT: usize = 512;

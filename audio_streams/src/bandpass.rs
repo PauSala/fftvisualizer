@@ -122,39 +122,6 @@ impl<const IB_LEN: usize, const FB_LEN: usize, const DELTA: usize, T: Consumer<I
                 (self.frequencies[i] - self.smoothed[i]) * (m / 1000.0) as f32 * DELTA as f32;
         }
 
-        let sum: f32 = self.smoothed.iter().sum();
-        let mean = sum / self.smoothed.len() as f32;
-
-        let mut variance_sum = 0.0;
-        for &magnitude in self.smoothed.iter() {
-            variance_sum += (magnitude - mean).powi(2);
-        }
-        let variance = variance_sum / self.smoothed.len() as f32;
-        let std_dev = variance.sqrt();
-
-        const THRESHOLD_FACTOR: f32 = 1.0;
-        let threshold = mean + THRESHOLD_FACTOR * std_dev;
-
-        let floor_threshold = threshold.max(0.001);
-
-        let min_factor = 0.1;
-        let max_factor = 1.0;
-
-        let range = max_factor - min_factor;
-
-        for i in 0..self.smoothed.len() {
-            let base_threshold = floor_threshold;
-
-            let normalized_i = i as f32 / (88.0 - 1.0);
-            let weighting_factor = min_factor + (normalized_i * range);
-            let final_weighted_threshold = base_threshold * weighting_factor;
-
-            // Apply the gate:
-            if self.smoothed[i] < final_weighted_threshold {
-                self.smoothed[i] = 0.0;
-            }
-        }
-
         self.index = 0;
     }
 
